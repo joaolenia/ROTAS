@@ -16,26 +16,55 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Ícones personalizados para Origem e Destino
+const startIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+const endIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
 const RouteSelection: React.FC = () => {
   const [selectedRoute, setSelectedRoute] = useState<string>('A');
   const [pathA, setPathA] = useState<[number, number][]>([]);
   const [pathB, setPathB] = useState<[number, number][]>([]);
   const [pathC, setPathC] = useState<[number, number][]>([]);
 
-  // Coordenadas em General Carneiro - PR
-  const mapCenter: [number, number] = [-26.4265, -51.3165]; // Destino (Escola)
-  const startA: [number, number] = [-26.4170, -51.3220]; // Início Rota A
-  const startB: [number, number] = [-26.4300, -51.3100]; // Início Rota B
-  const startC: [number, number] = [-26.4220, -51.3300]; // Início Rota C
+  // Ponto de Saída e Chegada fixos em General Carneiro - PR
+  const startPoint: [number, number] = [-26.4286, -51.3140]; // Casa (Saída)
+  const endPoint: [number, number] = [-26.4221, -51.3195];   // Escola (Chegada)
+
+  // Waypoints intermediários para forçar o OSRM a traçar rotas diferentes (Alternativas)
+  const waypointB: [number, number] = [-26.4250, -51.3110];
+  const waypointC: [number, number] = [-26.4290, -51.3200];
 
   useEffect(() => {
-    const fetchRealRoute = async (start: [number, number], end: [number, number], profile: string) => {
+    // Função para buscar rota real no OSRM
+    const fetchRealRoute = async (
+      start: [number, number], 
+      end: [number, number], 
+      profile: string,
+      waypoint?: [number, number]
+    ) => {
       try {
-        const url = `https://router.project-osrm.org/route/v1/${profile}/${start[1]},${start[0]};${end[1]},${end[0]}?geometries=geojson`;
+        // OSRM usa o formato [Longitude, Latitude]
+        let coords = `${start[1]},${start[0]}`;
+        if (waypoint) coords += `;${waypoint[1]},${waypoint[0]}`;
+        coords += `;${end[1]},${end[0]}`;
+
+        const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?geometries=geojson&overview=full`;
         const response = await fetch(url);
         const data = await response.json();
         
         if (data.routes && data.routes.length > 0) {
+          // Converte de [Lon, Lat] (GeoJSON) para [Lat, Lon] (Leaflet)
           return data.routes[0].geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
         }
       } catch (error) {
@@ -45,9 +74,12 @@ const RouteSelection: React.FC = () => {
     };
 
     const loadAllRoutes = async () => {
-      const routeA = await fetchRealRoute(startA, mapCenter, 'foot');
-      const routeB = await fetchRealRoute(startB, mapCenter, 'foot');
-      const routeC = await fetchRealRoute(startC, mapCenter, 'bike');
+      // Rota A: Direta a pé
+      const routeA = await fetchRealRoute(startPoint, endPoint, 'foot');
+      // Rota B: Caminho alternativo passando por um waypoint
+      const routeB = await fetchRealRoute(startPoint, endPoint, 'foot', waypointB);
+      // Rota C: Ciclovia/Bicicleta passando por outro waypoint
+      const routeC = await fetchRealRoute(startPoint, endPoint, 'bike', waypointC);
 
       setPathA(routeA);
       setPathB(routeB);
@@ -60,7 +92,7 @@ const RouteSelection: React.FC = () => {
   return (
     <div className="layout-wrapper">
       
-      {/* Barra de Navegação */}
+      {/* Menu Lateral Desktop / Rodapé Mobile */}
       <nav className="navigation-bar">
         <div className="nav-item">
           <Home size={24} />
@@ -84,7 +116,7 @@ const RouteSelection: React.FC = () => {
         </div>
       </nav>
 
-      {/* Área da Lista de Rotas e Controles */}
+      {/* Painel de Seleção de Rotas */}
       <aside className="sidebar-content">
         <header className="header">
           <button className="back-btn">
@@ -97,7 +129,6 @@ const RouteSelection: React.FC = () => {
         </header>
 
         <div className="routes-list">
-          {/* Rota A */}
           <div 
             className={`route-item ${selectedRoute === 'A' ? 'selected' : ''}`}
             onClick={() => setSelectedRoute('A')}
@@ -107,7 +138,7 @@ const RouteSelection: React.FC = () => {
             </div>
             <div className="route-info">
               <h4>Rota A - Mais Segura</h4>
-              <p>2,4 km - 30 min</p>
+              <p>1,2 km - 15 min</p>
               <span className="badge-recommended">Recomendada pela escola</span>
             </div>
             <div className="radio-btn">
@@ -115,7 +146,6 @@ const RouteSelection: React.FC = () => {
             </div>
           </div>
 
-          {/* Rota B */}
           <div 
             className={`route-item ${selectedRoute === 'B' ? 'selected' : ''}`}
             onClick={() => setSelectedRoute('B')}
@@ -125,14 +155,13 @@ const RouteSelection: React.FC = () => {
             </div>
             <div className="route-info">
               <h4>Rota B - Alternativa</h4>
-              <p>2,1 km - 27 min</p>
+              <p>1,5 km - 19 min</p>
             </div>
             <div className="radio-btn">
               {selectedRoute === 'B' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
             </div>
           </div>
 
-          {/* Rota C */}
           <div 
             className={`route-item ${selectedRoute === 'C' ? 'selected' : ''}`}
             onClick={() => setSelectedRoute('C')}
@@ -142,7 +171,7 @@ const RouteSelection: React.FC = () => {
             </div>
             <div className="route-info">
               <h4>Rota C - Ciclovia</h4>
-              <p>3,0 km - 15 min</p>
+              <p>1,8 km - 8 min</p>
             </div>
             <div className="radio-btn">
               {selectedRoute === 'C' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
@@ -155,11 +184,11 @@ const RouteSelection: React.FC = () => {
         </div>
       </aside>
 
-      {/* Área do Mapa */}
+      {/* Mapa Central */}
       <main className="map-area">
         <MapContainer 
-          center={mapCenter} 
-          zoom={14} 
+          center={[-26.4250, -51.3160]} 
+          zoom={15} 
           scrollWheelZoom={true} 
           className="leaflet-map"
         >
@@ -168,20 +197,49 @@ const RouteSelection: React.FC = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* Renderização condicional para alterar a opacidade com base na seleção */}
+          {/* As rotas desenhadas com classes CSS para animação */}
           {pathA.length > 0 && (
-            <Polyline positions={pathA} color="#00bcd4" weight={selectedRoute === 'A' ? 8 : 4} opacity={selectedRoute === 'A' ? 1 : 0.3} />
+            <Polyline 
+              positions={pathA} 
+              pathOptions={{
+                color: "#00bcd4",
+                weight: selectedRoute === 'A' ? 8 : 4,
+                opacity: selectedRoute === 'A' ? 1 : 0.2,
+                className: selectedRoute === 'A' ? 'route-path-active' : 'route-path-inactive'
+              }} 
+            />
           )}
           {pathB.length > 0 && (
-            <Polyline positions={pathB} color="#fbc02d" weight={selectedRoute === 'B' ? 8 : 4} opacity={selectedRoute === 'B' ? 1 : 0.3} />
+            <Polyline 
+              positions={pathB} 
+              pathOptions={{
+                color: "#fbc02d",
+                weight: selectedRoute === 'B' ? 8 : 4,
+                opacity: selectedRoute === 'B' ? 1 : 0.2,
+                className: selectedRoute === 'B' ? 'route-path-active' : 'route-path-inactive'
+              }} 
+            />
           )}
           {pathC.length > 0 && (
-            <Polyline positions={pathC} color="#4caf50" weight={selectedRoute === 'C' ? 8 : 4} opacity={selectedRoute === 'C' ? 1 : 0.3} />
+            <Polyline 
+              positions={pathC} 
+              pathOptions={{
+                color: "#4caf50",
+                weight: selectedRoute === 'C' ? 8 : 4,
+                opacity: selectedRoute === 'C' ? 1 : 0.2,
+                className: selectedRoute === 'C' ? 'route-path-active' : 'route-path-inactive'
+              }} 
+            />
           )}
           
-          <Marker position={mapCenter}>
-            <Popup>Escola Municipal (Destino)</Popup>
+          {/* Marcadores de Saída e Chegada */}
+          <Marker position={startPoint} icon={startIcon}>
+            <Popup>Sua Casa (Saída)</Popup>
           </Marker>
+          <Marker position={endPoint} icon={endIcon}>
+            <Popup>Escola Municipal (Chegada)</Popup>
+          </Marker>
+
         </MapContainer>
       </main>
 

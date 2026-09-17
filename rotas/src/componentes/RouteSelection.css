@@ -17,6 +17,34 @@
 }
 
 /* -------------------------------------------
+   ANIMAÇÃO DO MAPA (SVG PATHS)
+------------------------------------------- */
+/* Suaviza a transição de espessura e opacidade quando troca de rota */
+path.leaflet-interactive {
+  transition: stroke-width 0.4s ease, stroke-opacity 0.4s ease;
+}
+
+/* Efeito de "desenho" mágico apenas na rota selecionada */
+.route-path-active {
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  animation: drawRoute 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); /* Sombra para dar destaque 3D */
+}
+
+.route-path-inactive {
+  stroke-dasharray: none;
+  animation: none;
+  stroke-dashoffset: 0;
+}
+
+@keyframes drawRoute {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* -------------------------------------------
    MOBILE VIEW
 ------------------------------------------- */
 .map-area {
@@ -105,7 +133,8 @@
 .route-item.selected {
   background-color: var(--bg-white);
   border: 1px solid rgba(0,0,0,0.05);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  transform: scale(1.02); /* Animação de pulo no Card selecionado */
 }
 
 .route-icon-container {
@@ -165,11 +194,15 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.1s;
 }
 
 .btn-select-route:hover {
   background-color: #0c2646;
+}
+
+.btn-select-route:active {
+  transform: scale(0.98);
 }
 
 .navigation-bar {
@@ -227,16 +260,18 @@
   }
 
   .sidebar-content {
-    width: 420px; 
+    width: 450px; /* Alargado levemente para ficar melhor no desktop */
     height: 100vh;
     border-radius: 0; 
     margin-top: 0;
     padding-bottom: 0;
     box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+    z-index: 5;
   }
 
   .map-area {
     flex: 1;
     height: 100vh;
+    z-index: 1;
   }
 }
