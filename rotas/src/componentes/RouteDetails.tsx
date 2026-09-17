@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, Star, Route as RouteIcon } from 'lucide-react';
-import { MapContainer, TileLayer, Polyline, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './RouteDetails.css';
 
@@ -9,10 +8,6 @@ import './RouteDetails.css';
 const RouteDetails: React.FC = () => {
   const navigate = useNavigate();
 
-  // Coordenadas simuladas para o minimapa
-  const startPoint: [number, number] = [-26.4286, -51.3140];
-  const endPoint: [number, number] = [-26.4221, -51.3195];
-  const routePath: [number, number][] = [startPoint, [-26.4250, -51.3110], endPoint];
 
   return (
     <div className="details-wrapper">
@@ -27,21 +22,6 @@ const RouteDetails: React.FC = () => {
           </button>
         </header>
 
-        {/* Mini Mapa */}
-        <div className="mini-map-card">
-          <MapContainer 
-            center={[-26.4250, -51.3160]} 
-            zoom={14} 
-            scrollWheelZoom={false} 
-            zoomControl={false}
-            className="leaflet-mini-map"
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Polyline positions={routePath} color="#00bcd4" weight={5} opacity={1} />
-            <Marker position={startPoint} />
-            <Marker position={endPoint} />
-          </MapContainer>
-        </div>
 
         {/* Título e Badge */}
         <div className="title-row">
