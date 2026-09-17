@@ -1,0 +1,154 @@
+/* Container principal - cobre a tela toda e centraliza o card */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0; /* Fundo geral da página */
+  padding: 1rem;
+  font-family: 'Inter', sans-serif; /* Sugestão de fonte limpa */
+}
+
+/* O "celular" ou card principal */
+.login-card {
+  background-color: #e3e4e6; /* Cor de fundo do app na imagem */
+  width: 100%;
+  max-width: 400px; /* Tamanho mobile/tablet */
+  border-radius: 30px;
+  padding: 3rem 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Estilos da Logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.logo-image {
+  width: 150px; /* Ajuste conforme o tamanho da sua imagem */
+  height: auto;
+  margin-bottom: 0.5rem;
+}
+
+.logo-title {
+  color: #0b345d;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.logo-subtitle {
+  color: #0b345d;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+  line-height: 1.2;
+}
+
+/* Formulário */
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Grupos de Input (Email e Senha) */
+.input-group {
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  border: 1.5px solid #4a4a4a;
+  border-radius: 25px;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.3s;
+}
+
+.input-group:focus-within {
+  border-color: #0b345d;
+}
+
+.input-icon {
+  color: #5a7b9c;
+  margin-right: 0.75rem;
+}
+
+.input-group input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.input-group input::placeholder {
+  color: #7a7a7a;
+}
+
+.toggle-password {
+  background: none;
+  border: none;
+  color: #5a7b9c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* Botão de Entrar */
+.btn-entrar {
+  background-color: #123762; /* Azul escuro da imagem */
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+.btn-entrar:hover {
+  background-color: #0c2646;
+}
+
+.btn-entrar:active {
+  transform: scale(0.98);
+}
+
+/* Links do rodapé */
+.login-links {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.link-text {
+  color: #123762;
+  text-decoration: underline;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.link-text:hover {
+  color: #0c2646;
+}
+
+/* Responsividade para telas maiores (Desktop) */
+@media (min-width: 768px) {
+  .login-card {
+    max-width: 450px; /* Expande um pouco no desktop */
+    padding: 4rem 3rem;
+  }
+}
