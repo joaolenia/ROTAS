@@ -1,0 +1,242 @@
+:root {
+  --primary-blue: #123762;
+  --bg-light: #e3e4e6;
+  --bg-white: #ffffff;
+  --text-gray: #5a7b9c;
+  --border-color: #d1d5db;
+}
+
+.layout-wrapper {
+  display: flex;
+  flex-direction: column-reverse; 
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-light);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* -------------------------------------------
+   MOBILE VIEW
+------------------------------------------- */
+.map-area {
+  flex: none;
+  height: 45vh; 
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-light);
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+  margin-top: -20px; 
+  z-index: 2;
+  overflow-y: auto;
+  padding-bottom: 70px; 
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.title-light {
+  color: var(--primary-blue);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.title-bold {
+  color: var(--primary-blue);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.routes-list {
+  flex: 1;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 16px;
+}
+
+.route-item:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.route-item.selected {
+  background-color: var(--bg-white);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.route-icon-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.route-icon-container.green {
+  background-color: #e8f5e9;
+  border-radius: 8px;
+}
+
+.route-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.route-info h4 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.route-info p {
+  margin: 0.2rem 0 0.4rem;
+  color: var(--text-gray);
+  font-size: 0.8rem;
+}
+
+.badge-recommended {
+  background-color: #00bcd4;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  align-self: flex-start;
+}
+
+.action-container {
+  padding: 1.5rem;
+}
+
+.btn-select-route {
+  width: 100%;
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-select-route:hover {
+  background-color: #0c2646;
+}
+
+.navigation-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.8rem 0;
+  background-color: var(--bg-white);
+  border-top: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #8c98a4;
+  cursor: pointer;
+  font-size: 0.7rem;
+  gap: 0.3rem;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+.nav-item:hover {
+  color: var(--text-gray);
+}
+
+/* -------------------------------------------
+   DESKTOP VIEW (A partir de 768px)
+------------------------------------------- */
+@media (min-width: 768px) {
+  .layout-wrapper {
+    flex-direction: row; 
+  }
+
+  .navigation-bar {
+    position: static;
+    width: 80px;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 2rem;
+    gap: 2.5rem;
+    border-top: none;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .sidebar-content {
+    width: 420px; 
+    height: 100vh;
+    border-radius: 0; 
+    margin-top: 0;
+    padding-bottom: 0;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+  }
+
+  .map-area {
+    flex: 1;
+    height: 100vh;
+  }
+}
