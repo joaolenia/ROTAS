@@ -1,0 +1,214 @@
+:root {
+  --primary-blue: #123762;
+  --cyan: #00bcd4;
+  --bg-light: #e3e4e6;
+  --bg-card: #eaf2f8; /* Azul claro do card "Como funciona" */
+  --text-gray: #5a7b9c;
+  --border-color: #d1d5db;
+}
+
+/* Fundo geral e centralização Desktop */
+.details-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--bg-light);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Container que simula o celular */
+.details-container {
+  background-color: var(--bg-light);
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .details-container {
+    height: 850px;
+    max-height: 95vh;
+    border-radius: 35px;
+  }
+}
+
+/* Header */
+.details-header {
+  padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+/* Minimapa no topo */
+.mini-map-card {
+  margin: 0 1.5rem 1.5rem;
+  height: 180px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.leaflet-mini-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Título */
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem 1rem;
+}
+
+.title-row h2 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.badge-cyan {
+  background-color: var(--cyan);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 12px;
+}
+
+/* Lista de Informações */
+.info-list {
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: 1rem;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-icon {
+  color: var(--primary-blue);
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-text .label {
+  font-size: 0.75rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.info-text .value {
+  font-size: 1rem;
+  color: var(--primary-blue);
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+
+/* Card: Como funciona? */
+.instructions-card {
+  background-color: var(--bg-card);
+  margin: 1.5rem 1.5rem 6rem; /* Margem inferior extra para o botão fixo */
+  padding: 1.5rem;
+  border-radius: 20px;
+}
+
+.instructions-card h3 {
+  color: var(--primary-blue);
+  margin: 0 0 1.2rem 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.instructions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.instructions-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.step-number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-gray);
+  color: var(--text-gray);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.instructions-list p {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Botão Fixo Inferior */
+.bottom-action {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem;
+  background: linear-gradient(to top, var(--bg-light) 70%, transparent);
+}
+
+.btn-monitor {
+  width: 100%;
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 1.1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(18, 55, 98, 0.2);
+  transition: transform 0.1s, background-color 0.3s;
+}
+
+.btn-monitor:hover {
+  background-color: #0c2646;
+}
+
+.btn-monitor:active {
+  transform: scale(0.98);
+}

@@ -1,13 +1,17 @@
 import React from 'react';
-import RouteSelection from './componentes/RouteSelection'; // Certifique-se de que o caminho do import está correto
-import './App.css'; // Mantenha se tiver estilos globais aqui, ou remova se não for usar
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import RouteSelection from './componentes/RouteSelection';
+import RouteDetails from './componentes/RouteDetails';
 
 const App: React.FC = () => {
   return (
-    <>
-      {/* Aqui estamos renderizando o componente de Login */}
-      <RouteSelection />
-    </>
+    // O BrowserRouter é OBRIGATÓRIO por fora de tudo que usa rotas
+    <BrowserRouter> 
+      <Routes>
+        <Route path="/" element={<RouteSelection />} />
+        <Route path="/detalhes-rota" element={<RouteDetails />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

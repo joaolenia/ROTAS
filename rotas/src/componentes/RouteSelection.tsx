@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './RouteSelection.css';
+import { useNavigate } from 'react-router-dom';
 
 // Correção para o ícone padrão do Leaflet no React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -32,6 +33,9 @@ const endIcon = new L.Icon({
 });
 
 const RouteSelection: React.FC = () => {
+  // ✅ CORREÇÃO: O hook useNavigate AGORA ESTÁ AQUI DENTRO!
+  const navigate = useNavigate();
+
   const [selectedRoute, setSelectedRoute] = useState<string>('A');
   const [pathA, setPathA] = useState<[number, number][]>([]);
   const [pathB, setPathB] = useState<[number, number][]>([]);
@@ -180,7 +184,9 @@ const RouteSelection: React.FC = () => {
         </div>
 
         <div className="action-container">
-          <button className="btn-select-route">SELECIONAR ROTA</button>
+          <button className="btn-select-route" onClick={() => navigate('/detalhes-rota')}>
+            SELECIONAR ROTA
+          </button>
         </div>
       </aside>
 
