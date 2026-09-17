@@ -8,7 +8,6 @@
   --border-color: #e3e4e6;
 }
 
-/* Container de fundo da tela (Desktop) */
 .app-container {
   display: flex;
   justify-content: center;
@@ -18,12 +17,11 @@
   font-family: 'Inter', sans-serif;
 }
 
-/* O Celular/App */
 .mobile-view {
   width: 100%;
   max-width: 420px;
   height: 100vh;
-  background-color: var(--bg-app);
+  background-color: var(--bg-white);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -39,7 +37,7 @@
   }
 }
 
-/* Header Dinâmico (Muda apenas a cor dessa barra) */
+/* Header */
 .monitor-header {
   display: flex;
   align-items: center;
@@ -50,7 +48,7 @@
   z-index: 10;
 }
 
-.on-route .monitor-header { background-color: var(--green-main); }
+.on-route .monitor-header { background-color: var(--primary-blue); }
 .off-route .monitor-header { background-color: var(--red-main); }
 
 .back-btn-white {
@@ -58,25 +56,17 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  display: flex;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .header-title h1 {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
-/* Mapa Limpo */
+/* Mapa e Game HUD */
 .map-section {
-  flex: none;
-  height: 40vh;
+  flex: 1; /* Cresce e ocupa o máximo possível */
   width: 100%;
   position: relative;
   z-index: 1;
@@ -87,11 +77,34 @@
   height: 100%;
 }
 
-/* -------------------------------------------
-   ANIMAÇÃO DO MARCADOR DO USUÁRIO
-------------------------------------------- */
+.game-hud-score {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 1000; /* Acima do Leaflet */
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 2px solid #ffd700;
+}
+
+.hud-icon {
+  font-size: 1.2rem;
+}
+
+.hud-text {
+  color: var(--primary-blue);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+/* Marcadores Leaflet Customizados */
 .animated-user-marker {
-  transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: transform 0.4s linear;
 }
 
 .user-pulse {
@@ -126,182 +139,166 @@
 }
 
 @keyframes pulse-ring-green {
-  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(27, 142, 68, 0.5); }
-  70% { transform: scale(1.4); box-shadow: 0 0 0 10px rgba(27, 142, 68, 0); }
-  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(27, 142, 68, 0); }
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(0.8); }
 }
-
 @keyframes pulse-ring-red {
-  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.5); }
-  70% { transform: scale(1.4); box-shadow: 0 0 0 10px rgba(230, 57, 70, 0); }
-  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(0.8); }
 }
 
-/* -------------------------------------------
-   PAINEL DE STATUS BRANCO/CLEAN
-------------------------------------------- */
+.coin-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: bounce-coin 2s infinite ease-in-out;
+}
+
+.coin-emoji {
+  font-size: 24px;
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3));
+}
+
+@keyframes bounce-coin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Painel de Status Inferior Clean */
 .status-panel {
-  flex: 1;
-  background-color: var(--bg-app);
+  flex: none;
+  background-color: var(--bg-white);
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+  margin-top: -20px; 
   z-index: 10;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
 }
 
-.status-card {
-  padding: 2rem 1.5rem;
+/* Barra de Distâncias (Sempre visível) */
+.distances-row {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeIn 0.3s ease forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Estado: Dentro da Rota */
-.success-header {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 1.2rem;
-}
-
-.shield-icon-container {
-  background-color: var(--green-main);
-  border-radius: 16px;
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(27, 142, 68, 0.2);
-}
-
-.success-text h2 {
-  margin: 0;
-  color: var(--green-main);
-  font-size: 1.15rem;
-  font-weight: 800;
-  line-height: 1.3;
-}
-
-.points-badge {
-  display: inline-block;
-  color: var(--primary-blue);
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-top: 0.3rem;
-}
-
-.stats-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem 0;
-  border-top: 1px solid var(--border-color);
+  padding: 1.5rem;
   border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
 }
 
-.icon-circle {
-  background-color: var(--primary-blue);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.distance-block {
   display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 0.8rem;
+  flex: 1;
 }
 
-.stat-info {
-  display: flex;
-  flex-direction: column;
+.distance-divider {
+  width: 1px;
+  height: 30px;
+  background-color: var(--border-color);
+  margin: 0 1rem;
 }
 
-.stat-label {
-  font-size: 0.75rem;
+.dist-label {
+  display: block;
+  font-size: 0.7rem;
   color: var(--text-gray);
   font-weight: 600;
+  text-transform: uppercase;
 }
 
-.stat-value {
+.dist-value {
+  display: block;
   font-size: 1.1rem;
   color: var(--primary-blue);
   font-weight: 800;
-  margin-top: 0.1rem;
 }
 
-.safe-area-indicator {
+/* Cards Dinâmicos de Status */
+.status-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.safe-state .safe-area-indicator {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  color: var(--primary-blue);
-  font-weight: 700;
-  font-size: 0.95rem;
+  gap: 0.8rem;
+}
+
+.safe-state h2 {
+  margin: 0;
+  color: var(--green-main);
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 .pulsing-dot-green-small {
-  width: 16px;
-  height: 16px;
-  background-color: #00e676;
+  width: 14px;
+  height: 14px;
+  background-color: var(--green-main);
   border-radius: 50%;
-  box-shadow: 0 0 8px #00e676;
+  box-shadow: 0 0 8px var(--green-main);
+  animation: pulse-ring-green 1.5s infinite;
 }
 
-/* Estado: Fora da Rota */
-.error-title {
+.alert-state .alert-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-state .error-title {
   color: var(--red-main);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 800;
-  text-align: center;
   margin: 0;
-  line-height: 1.3;
 }
 
 .status-desc {
-  color: var(--primary-blue);
-  font-size: 0.95rem;
-  text-align: center;
+  color: var(--text-gray);
+  font-size: 0.9rem;
   margin: 0;
   line-height: 1.5;
 }
 
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 0.5rem;
+.status-desc strong {
+  color: var(--primary-blue);
 }
 
+/* Botões */
 .btn-solid-red {
   background-color: var(--red-main);
   color: white;
   border: none;
   border-radius: 25px;
-  padding: 1.1rem;
-  font-size: 1rem;
+  padding: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.25);
-  transition: background-color 0.2s;
-}
-
-.btn-solid-red:hover {
-  background-color: #c92a37;
+  margin-top: 0.5rem;
 }
 
 .btn-outline {
   background-color: transparent;
   color: var(--primary-blue);
-  border: 1.5px solid var(--primary-blue);
+  border: 1.5px solid var(--border-color);
   border-radius: 25px;
-  padding: 1.1rem;
-  font-size: 1rem;
+  padding: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s;
+  margin-top: 0.5rem;
 }
 
-.btn-outline:hover {
-  background-color: rgba(18, 55, 98, 0.05);
+@media (min-width: 768px) {
+  .app-container { flex-direction: row; }
 }

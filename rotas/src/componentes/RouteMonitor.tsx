@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Clock, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Route as RouteIcon, MapPin, ArrowLeft } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './RouteMonitor.css';
 
-// Rota simulada (General Carneiro)
-// Rota real mapeada via Google Maps
+// Rota invertida com coordenadas reais passadas por você
 const routePath: [number, number][] = [
   [-26.428857159133283, -51.31636600069183],
   [-26.428732662628644, -51.31612498757762],
@@ -21,9 +20,11 @@ const routePath: [number, number][] = [
   [-26.427362332420707, -51.3170381075151]
 ];
 
+// Transforma para o padrão Turf (Longitude, Latitude)
 const turfRouteLine = turf.lineString(routePath.map(c => [c[1], c[0]]));
+const totalRouteDistance = turf.length(turfRouteLine, { units: 'kilometers' });
 
-// Ícone Customizado Animado para o Usuário
+// Ícones Customizados Leaflet
 const createUserIcon = (isOffRoute: boolean) => new L.DivIcon({
   className: 'animated-user-marker',
   html: `<div class="user-pulse ${isOffRoute ? 'pulse-red' : 'pulse-green'}">
@@ -33,6 +34,13 @@ const createUserIcon = (isOffRoute: boolean) => new L.DivIcon({
   iconAnchor: [15, 15],
 });
 
+const coinIcon = new L.DivIcon({
+  className: 'coin-marker',
+  html: `<div class="coin-emoji">🪙</div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
 const schoolIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -40,73 +48,113 @@ const schoolIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-// Rastreador Suave de Câmera
+// Rastreador de Câmera Suave
 const MapTracker: React.FC<{ position: [number, number] }> = ({ position }) => {
   const map = useMap();
   useEffect(() => {
-    map.panTo(position, { animate: true, duration: 0.8 });
+    map.panTo(position, { animate: true, duration: 0.5 });
   }, [position, map]);
   return null;
 };
 
-// Simulador de cliques para teste no Desktop
+// Simulador de cliques no Desktop
 const MapSimulator: React.FC<{ onMapClick: (lat: number, lng: number) => void }> = ({ onMapClick }) => {
   useMapEvents({
-    click(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    },
+    click(e) { onMapClick(e.latlng.lat, e.latlng.lng); },
   });
   return null;
 };
 
+// --- Tipagem de Moedas ---
+type Coin = { id: number; lat: number; lng: number; collected: boolean };
+
 const RouteMonitor: React.FC = () => {
   const navigate = useNavigate();
 
+  // Estados do Usuário e Rota
   const [userPos, setUserPos] = useState<[number, number]>(routePath[0]);
   const [isOffRoute, setIsOffRoute] = useState<boolean>(false);
   const [distanceOff, setDistanceOff] = useState<number>(0);
-  const [points, setPoints] = useState<number>(45);
-  const [distanceTraveled, setDistanceTraveled] = useState<number>(1.2);
+  const [distanceTraveled, setDistanceTraveled] = useState<number>(0);
+  const [distanceRemaining, setDistanceRemaining] = useState<number>(totalRouteDistance);
   
-  const lastValidPos = useRef<[number, number]>(routePath[0]);
+  // Gamificação (Moedas e Pontos)
+  const [score, setScore] = useState<number>(0);
+  const [coins, setCoins] = useState<Coin[]>([]);
 
+  // Inicializa as 10 moedas espalhadas pela rota ao carregar a tela
+  useEffect(() => {
+    const generatedCoins: Coin[] = [];
+    const interval = totalRouteDistance / 11; // Divide o trajeto para caber 10 moedas
+
+    for (let i = 1; i <= 10; i++) {
+      const pointAlong = turf.along(turfRouteLine, interval * i, { units: 'kilometers' });
+      generatedCoins.push({
+        id: i,
+        lng: pointAlong.geometry.coordinates[0],
+        lat: pointAlong.geometry.coordinates[1],
+        collected: false
+      });
+    }
+    setCoins(generatedCoins);
+  }, []);
+
+  // Lógica Matemática de Atualização
   const handleLocationUpdate = (lat: number, lng: number) => {
     setUserPos([lat, lng]);
-
     const userPt = turf.point([lng, lat]);
-    const distanceToRoute = turf.pointToLineDistance(userPt, turfRouteLine, { units: 'meters' });
 
-    if (distanceToRoute > 15) {
+    // 1. Verifica se saiu da Rota (Precisão Rigorosa: 10 metros)
+    const distToLineMeters = turf.pointToLineDistance(userPt, turfRouteLine, { units: 'meters' });
+    
+    if (distToLineMeters > 10) {
       setIsOffRoute(true);
-      setDistanceOff(Math.round(distanceToRoute));
-      setPoints(prev => Math.max(0, prev - 1));
+      setDistanceOff(Math.round(distToLineMeters));
     } else {
       setIsOffRoute(false);
+      setDistanceOff(0);
       
-      const lastPt = turf.point([lastValidPos.current[1], lastValidPos.current[0]]);
-      const distanceMoved = turf.distance(lastPt, userPt, { units: 'meters' });
+      // 2. Calcula Distância Percorrida e Faltante
+      const snappedPt = turf.nearestPointOnLine(turfRouteLine, userPt);
+      const startPt = turf.point([routePath[0][1], routePath[0][0]]);
+      
+      const traveledLine = turf.lineSlice(startPt, snappedPt, turfRouteLine);
+      const traveledKm = turf.length(traveledLine, { units: 'kilometers' });
+      
+      setDistanceTraveled(Number(traveledKm.toFixed(2)));
+      setDistanceRemaining(Math.max(0, Number((totalRouteDistance - traveledKm).toFixed(2))));
 
-      if (distanceMoved >= 30) {
-        setPoints(prev => prev + 5);
-        setDistanceTraveled(prev => Number((prev + 0.03).toFixed(2)));
-        lastValidPos.current = [lat, lng];
-      }
+      // 3. Verifica Coleta de Moedas (Raio de 5 metros)
+      setCoins(prevCoins => {
+        let newlyCollected = 0;
+        const nextCoins = prevCoins.map(coin => {
+          if (!coin.collected) {
+            const coinPt = turf.point([coin.lng, coin.lat]);
+            const distToCoin = turf.distance(userPt, coinPt, { units: 'meters' });
+            
+            if (distToCoin <= 5) {
+              newlyCollected += 1;
+              return { ...coin, collected: true };
+            }
+          }
+          return coin;
+        });
+
+        if (newlyCollected > 0) {
+          setScore(prev => prev + (newlyCollected * 10)); // 10 Pontos por moeda
+        }
+        return nextCoins;
+      });
     }
   };
 
   useEffect(() => {
+    // Configuração Otimizada de GPS Real-Time
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        handleLocationUpdate(position.coords.latitude, position.coords.longitude);
-      },
-      (error) => console.error("Erro GPS:", error),
-      { 
-        enableHighAccuracy: true, 
-        maximumAge: 0,
-        timeout: 2000 
-      }
+      (pos) => handleLocationUpdate(pos.coords.latitude, pos.coords.longitude),
+      (err) => console.error("GPS Error:", err),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 2000 }
     );
-
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
@@ -114,91 +162,95 @@ const RouteMonitor: React.FC = () => {
     <div className="app-container">
       <div className={`mobile-view ${isOffRoute ? 'off-route' : 'on-route'}`}>
         
-        {/* Top Banner Elegante */}
+        {/* Header Superior */}
         <header className="monitor-header">
           <button className="back-btn-white" onClick={() => navigate(-1)}>
             <ArrowLeft size={24} color="#fff" />
           </button>
           <div className="header-title">
-            {isOffRoute ? <ShieldAlert size={24} /> : <ShieldCheck size={24} />}
-            <h1>{isOffRoute ? 'ATENÇÃO!' : 'Rota em andamento'}</h1>
+            <h1>Monitoramento R.O.T.A.S.</h1>
           </div>
-          <div style={{width: 24}}></div> {/* Spacer para centralizar */}
+          <div style={{width: 24}}></div>
         </header>
 
-        {/* Mapa */}
+        {/* Área do Mapa */}
         <main className="map-section">
+          {/* HUD Score Flutuante */}
+          <div className="game-hud-score">
+            <span className="hud-icon">🪙</span>
+            <span className="hud-text">{score} / 100 pts</span>
+          </div>
+
           <MapContainer 
-            center={userPos} 
-            zoom={17} 
-            scrollWheelZoom={true} 
-            zoomControl={false}
+            center={userPos} zoom={18} 
+            scrollWheelZoom={true} zoomControl={false}
             className="leaflet-map-monitor"
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            
             <MapTracker position={userPos} />
             <MapSimulator onMapClick={handleLocationUpdate} />
 
+            {/* Linha da Rota */}
             <Polyline positions={routePath} color="#00bcd4" weight={7} opacity={0.9} />
 
+            {/* Alerta de Desvio de Rota */}
             {isOffRoute && (
               <Polyline 
-                positions={[userPos, routePath[1]]} 
+                positions={[userPos, routePath[routePath.length - 1]]} 
                 color="#e63946" weight={3} dashArray="6, 8" 
               />
             )}
 
-            <Marker position={userPos} icon={createUserIcon(isOffRoute)} />
+            {/* Renderiza as moedas que ainda não foram coletadas */}
+            {coins.filter(c => !c.collected).map(coin => (
+              <Marker key={coin.id} position={[coin.lat, coin.lng]} icon={coinIcon} />
+            ))}
 
-            <Marker position={routePath[routePath.length - 1]} icon={schoolIcon}>
-              <Popup>Escola</Popup>
-            </Marker>
+            <Marker position={userPos} icon={createUserIcon(isOffRoute)} />
+            <Marker position={routePath[routePath.length - 1]} icon={schoolIcon} />
           </MapContainer>
         </main>
 
-        {/* Painel Inferior Limpo */}
+        {/* Painel Inferior Clean */}
         <aside className="status-panel">
-          {isOffRoute ? (
-            <div className="status-card">
-              <h2 className="error-title">Você saiu da área<br/>da Rota Segura</h2>
-              <p className="status-desc">
-                Você está aproximadamente <strong>{distanceOff} metros</strong> fora do trajeto recomendado.
-              </p>
-              <p className="status-desc">
-                Retorne para a rota para continuar acumulando pontos.
-              </p>
-              <div className="action-buttons">
-                <button className="btn-solid-red" onClick={() => navigate(-1)}>VOLTAR PARA A ROTA</button>
-                <button className="btn-outline">VER OUTRAS ROTAS</button>
+          
+          <div className="distances-row">
+            <div className="distance-block">
+              <RouteIcon size={20} color="#123762" />
+              <div>
+                <span className="dist-label">Percorrido</span>
+                <span className="dist-value">{distanceTraveled} km</span>
               </div>
             </div>
+            <div className="distance-divider"></div>
+            <div className="distance-block">
+              <MapPin size={20} color="#123762" />
+              <div>
+                <span className="dist-label">Faltam</span>
+                <span className="dist-value">{distanceRemaining} km</span>
+              </div>
+            </div>
+          </div>
+
+          {isOffRoute ? (
+            <div className="status-card alert-state">
+              <div className="alert-header">
+                <AlertTriangle size={28} color="#e63946" />
+                <h2 className="error-title">Fora da Rota!</h2>
+              </div>
+              <p className="status-desc">
+                Você se afastou <strong>{distanceOff} metros</strong> da linha principal. Retorne para continuar coletando moedas.
+              </p>
+              <button className="btn-solid-red" onClick={() => navigate(-1)}>ENCERRAR ROTA</button>
+            </div>
           ) : (
-            <div className="status-card">
-              <div className="success-header">
-                <div className="shield-icon-container">
-                  <ShieldCheck size={36} color="#fff" />
-                </div>
-                <div className="success-text">
-                  <h2>Você está dentro<br/>da rota segura!</h2>
-                  <span className="points-badge">+{points} pontos acumulados</span>
-                </div>
-              </div>
-
-              <div className="stats-row">
-                <div className="icon-circle">
-                  <Clock size={20} color="#fff" />
-                </div>
-                <div className="stat-info">
-                  <span className="stat-label">Distância percorrida</span>
-                  <span className="stat-value">{distanceTraveled} km</span>
-                </div>
-              </div>
-
+            <div className="status-card safe-state">
               <div className="safe-area-indicator">
                 <div className="pulsing-dot-green-small"></div>
-                <span>Dentro da área segura</span>
+                <h2>Você está na rota segura</h2>
               </div>
+              <p className="status-desc">Siga o trajeto azul no mapa para coletar as moedas e chegar ao seu destino.</p>
+              <button className="btn-outline" onClick={() => navigate(-1)}>FINALIZAR</button>
             </div>
           )}
         </aside>
