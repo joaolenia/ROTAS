@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Route as RouteIcon, MapPin, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Route as RouteIcon, MapPin, ArrowLeft, ShieldAlert, Star } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './RouteMonitor.css';
 
-// Rota invertida com coordenadas reais passadas por você
+// Rota real mapeada (General Carneiro)
 const routePath: [number, number][] = [
   [-26.428857159133283, -51.31636600069183],
   [-26.428732662628644, -51.31612498757762],
@@ -24,7 +24,7 @@ const routePath: [number, number][] = [
 const turfRouteLine = turf.lineString(routePath.map(c => [c[1], c[0]]));
 const totalRouteDistance = turf.length(turfRouteLine, { units: 'kilometers' });
 
-// Ícones Customizados Leaflet
+// --- ÍCONES CUSTOMIZADOS ---
 const createUserIcon = (isOffRoute: boolean) => new L.DivIcon({
   className: 'animated-user-marker',
   html: `<div class="user-pulse ${isOffRoute ? 'pulse-red' : 'pulse-green'}">
@@ -34,13 +34,6 @@ const createUserIcon = (isOffRoute: boolean) => new L.DivIcon({
   iconAnchor: [15, 15],
 });
 
-const coinIcon = new L.DivIcon({
-  className: 'coin-marker',
-  html: `<div class="coin-emoji">🪙</div>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-});
-
 const schoolIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -48,16 +41,15 @@ const schoolIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-// Rastreador de Câmera Suave
+// --- RASTREADORES DO MAPA ---
 const MapTracker: React.FC<{ position: [number, number] }> = ({ position }) => {
   const map = useMap();
   useEffect(() => {
-    map.panTo(position, { animate: true, duration: 0.5 });
+    map.panTo(position, { animate: true, duration: 0.6 });
   }, [position, map]);
   return null;
 };
 
-// Simulador de cliques no Desktop
 const MapSimulator: React.FC<{ onMapClick: (lat: number, lng: number) => void }> = ({ onMapClick }) => {
   useMapEvents({
     click(e) { onMapClick(e.latlng.lat, e.latlng.lng); },
@@ -65,41 +57,24 @@ const MapSimulator: React.FC<{ onMapClick: (lat: number, lng: number) => void }>
   return null;
 };
 
-// --- Tipagem de Moedas ---
-type Coin = { id: number; lat: number; lng: number; collected: boolean };
-
 const RouteMonitor: React.FC = () => {
   const navigate = useNavigate();
 
-  // Estados do Usuário e Rota
+  // Estados Locais
   const [userPos, setUserPos] = useState<[number, number]>(routePath[0]);
   const [isOffRoute, setIsOffRoute] = useState<boolean>(false);
   const [distanceOff, setDistanceOff] = useState<number>(0);
+  
   const [distanceTraveled, setDistanceTraveled] = useState<number>(0);
   const [distanceRemaining, setDistanceRemaining] = useState<number>(totalRouteDistance);
   
-  // Gamificação (Moedas e Pontos)
-  const [score, setScore] = useState<number>(0);
-  const [coins, setCoins] = useState<Coin[]>([]);
+  // Pontuação inicial
+  const [score, setScore] = useState<number>(100);
+  
+  // Ref para controlar a perda de pontos apenas 1 vez a cada saída
+  const isOffRouteRef = useRef<boolean>(false);
 
-  // Inicializa as 10 moedas espalhadas pela rota ao carregar a tela
-  useEffect(() => {
-    const generatedCoins: Coin[] = [];
-    const interval = totalRouteDistance / 11; // Divide o trajeto para caber 10 moedas
-
-    for (let i = 1; i <= 10; i++) {
-      const pointAlong = turf.along(turfRouteLine, interval * i, { units: 'kilometers' });
-      generatedCoins.push({
-        id: i,
-        lng: pointAlong.geometry.coordinates[0],
-        lat: pointAlong.geometry.coordinates[1],
-        collected: false
-      });
-    }
-    setCoins(generatedCoins);
-  }, []);
-
-  // Lógica Matemática de Atualização
+  // Cálculo Matemático (chamado toda vez que o GPS atualiza)
   const handleLocationUpdate = (lat: number, lng: number) => {
     setUserPos([lat, lng]);
     const userPt = turf.point([lng, lat]);
@@ -110,42 +85,27 @@ const RouteMonitor: React.FC = () => {
     if (distToLineMeters > 10) {
       setIsOffRoute(true);
       setDistanceOff(Math.round(distToLineMeters));
+      
+      // Desconta 10 pontos APENAS no momento exato que sair da rota
+      if (!isOffRouteRef.current) {
+        setScore(prev => Math.max(0, prev - 10)); // Impede que a nota fique negativa
+        isOffRouteRef.current = true;
+      }
     } else {
       setIsOffRoute(false);
       setDistanceOff(0);
-      
-      // 2. Calcula Distância Percorrida e Faltante
-      const snappedPt = turf.nearestPointOnLine(turfRouteLine, userPt);
-      const startPt = turf.point([routePath[0][1], routePath[0][0]]);
-      
-      const traveledLine = turf.lineSlice(startPt, snappedPt, turfRouteLine);
-      const traveledKm = turf.length(traveledLine, { units: 'kilometers' });
-      
-      setDistanceTraveled(Number(traveledKm.toFixed(2)));
-      setDistanceRemaining(Math.max(0, Number((totalRouteDistance - traveledKm).toFixed(2))));
-
-      // 3. Verifica Coleta de Moedas (Raio de 5 metros)
-      setCoins(prevCoins => {
-        let newlyCollected = 0;
-        const nextCoins = prevCoins.map(coin => {
-          if (!coin.collected) {
-            const coinPt = turf.point([coin.lng, coin.lat]);
-            const distToCoin = turf.distance(userPt, coinPt, { units: 'meters' });
-            
-            if (distToCoin <= 5) {
-              newlyCollected += 1;
-              return { ...coin, collected: true };
-            }
-          }
-          return coin;
-        });
-
-        if (newlyCollected > 0) {
-          setScore(prev => prev + (newlyCollected * 10)); // 10 Pontos por moeda
-        }
-        return nextCoins;
-      });
+      isOffRouteRef.current = false; // Resetou, voltou pra rota segura
     }
+
+    // 2. Calcula Distância Percorrida e Faltante SEMPRE
+    const snappedPt = turf.nearestPointOnLine(turfRouteLine, userPt);
+    const startPt = turf.point(turfRouteLine.geometry.coordinates[0]);
+    
+    const traveledLine = turf.lineSlice(startPt, snappedPt, turfRouteLine);
+    const traveledKm = turf.length(traveledLine, { units: 'kilometers' });
+    
+    setDistanceTraveled(Number(traveledKm.toFixed(3)));
+    setDistanceRemaining(Math.max(0, Number((totalRouteDistance - traveledKm).toFixed(3))));
   };
 
   useEffect(() => {
@@ -168,7 +128,8 @@ const RouteMonitor: React.FC = () => {
             <ArrowLeft size={24} color="#fff" />
           </button>
           <div className="header-title">
-            <h1>Monitoramento R.O.T.A.S.</h1>
+            {isOffRoute ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
+            <h1>{isOffRoute ? 'VOCÊ SAIU DA ROTA!' : 'Rota em andamento'}</h1>
           </div>
           <div style={{width: 24}}></div>
         </header>
@@ -176,24 +137,28 @@ const RouteMonitor: React.FC = () => {
         {/* Área do Mapa */}
         <main className="map-section">
           {/* HUD Score Flutuante */}
-          <div className="game-hud-score">
-            <span className="hud-icon">🪙</span>
-            <span className="hud-text">{score} / 100 pts</span>
+          <div className={`game-hud-score ${score < 50 ? 'score-low' : ''}`}>
+            <Star size={18} fill="#fbc02d" color="#fbc02d" />
+            <span className="hud-text">
+              {score} pts
+            </span>
           </div>
 
           <MapContainer 
-            center={userPos} zoom={18} 
-            scrollWheelZoom={true} zoomControl={false}
+            center={userPos} 
+            zoom={18} 
+            scrollWheelZoom={true} 
+            zoomControl={false}
             className="leaflet-map-monitor"
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <MapTracker position={userPos} />
             <MapSimulator onMapClick={handleLocationUpdate} />
 
-            {/* Linha da Rota */}
+            {/* Linha da Rota Oficial */}
             <Polyline positions={routePath} color="#00bcd4" weight={7} opacity={0.9} />
 
-            {/* Alerta de Desvio de Rota */}
+            {/* Linha de alerta até o destino final se estiver fora da rota */}
             {isOffRoute && (
               <Polyline 
                 positions={[userPos, routePath[routePath.length - 1]]} 
@@ -201,13 +166,10 @@ const RouteMonitor: React.FC = () => {
               />
             )}
 
-            {/* Renderiza as moedas que ainda não foram coletadas */}
-            {coins.filter(c => !c.collected).map(coin => (
-              <Marker key={coin.id} position={[coin.lat, coin.lng]} icon={coinIcon} />
-            ))}
-
             <Marker position={userPos} icon={createUserIcon(isOffRoute)} />
-            <Marker position={routePath[routePath.length - 1]} icon={schoolIcon} />
+            <Marker position={routePath[routePath.length - 1]} icon={schoolIcon}>
+              <Popup>Escola (Destino)</Popup>
+            </Marker>
           </MapContainer>
         </main>
 
@@ -232,6 +194,7 @@ const RouteMonitor: React.FC = () => {
             </div>
           </div>
 
+          {/* Cards de Status */}
           {isOffRoute ? (
             <div className="status-card alert-state">
               <div className="alert-header">
@@ -239,7 +202,7 @@ const RouteMonitor: React.FC = () => {
                 <h2 className="error-title">Fora da Rota!</h2>
               </div>
               <p className="status-desc">
-                Você se afastou <strong>{distanceOff} metros</strong> da linha principal. Retorne para continuar coletando moedas.
+                Você se afastou <strong>{distanceOff} metros</strong> da linha principal. Retorne para parar de perder pontos!
               </p>
               <button className="btn-solid-red" onClick={() => navigate(-1)}>ENCERRAR ROTA</button>
             </div>
@@ -249,7 +212,7 @@ const RouteMonitor: React.FC = () => {
                 <div className="pulsing-dot-green-small"></div>
                 <h2>Você está na rota segura</h2>
               </div>
-              <p className="status-desc">Siga o trajeto azul no mapa para coletar as moedas e chegar ao seu destino.</p>
+              <p className="status-desc">Siga o trajeto azul no mapa até chegar ao seu destino.</p>
               <button className="btn-outline" onClick={() => navigate(-1)}>FINALIZAR</button>
             </div>
           )}
