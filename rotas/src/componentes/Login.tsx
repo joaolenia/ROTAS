@@ -1,79 +1,89 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import './Login.css';
-import logo from '../logo.png'
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import { Mail, Lock, LogIn, ShieldCheck } from 'lucide-react';
+import './CreateStudent.css'; // Reutilizando o mesmo CSS
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', { email, password });
-    // Lógica de autenticação aqui
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      // Busca direta na tabela verificando email e senha
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single(); // Espera apenas 1 utilizador
+
+      if (error || !data) {
+        throw new Error('E-mail ou palavra-passe incorretos.');
+      }
+
+      // Sucesso: Guarda o perfil no localStorage para uso em /detalhes-rota
+      localStorage.setItem('estudante_logado', JSON.stringify(data));
+      navigate('/selecionar-rota');
+      
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        {/* Placeholder para a Logo */}
-        <div className="logo-container">
-          <img 
-            src={logo} 
-            alt="R.O.T.A.S. Logo" 
-            className="logo-image" 
-          />
-          <h2 className="logo-title">R.O.T.A.S.</h2>
-          <p className="logo-subtitle">
-            Rede de Orientação e Trafegabilidade<br/>
-            Ativa para Segurança Escolar
-          </p>
+    <div className="auth-container">
+      <div className="mobile-view auth-card">
+        
+        <div className="auth-header">
+          <div className="shield-icon-wrapper">
+            <ShieldCheck size={48} color="#fff" />
+          </div>
+          <h1>Bem-vindo</h1>
+          <p>Inicie sessão para aceder às rotas</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
+        <form className="auth-form" onSubmit={handleLogin}>
+          {errorMsg && <div className="error-message">{errorMsg}</div>}
+
           <div className="input-group">
-            <Mail className="input-icon" size={20} />
-            <input
-              type="email"
-              placeholder="Digite seu e-mail"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+            <Mail size={20} className="input-icon" />
+            <input 
+              type="email" 
+              placeholder="E-mail" 
+              required 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
             />
           </div>
 
           <div className="input-group">
-            <Lock className="input-icon" size={20} />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Digite sua senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+            <Lock size={20} className="input-icon" />
+            <input 
+              type="password" 
+              placeholder="Palavra-passe" 
+              required 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
             />
-            <button 
-              type="button" 
-              className="toggle-password"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
           </div>
 
-          <button type="submit" className="btn-entrar">
-            ENTRAR
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? 'A ENTRAR...' : 'INICIAR SESSÃO'}
+            {!loading && <LogIn size={20} />}
           </button>
         </form>
 
-        <div className="login-links">
-          <a href="/esqueci-senha" className="link-text">
-            Esqueci minha senha
-          </a>
-          <a href="/cadastro" className="link-text">
-            Ainda não possuo uma conta
-          </a>
-        </div>
       </div>
     </div>
   );

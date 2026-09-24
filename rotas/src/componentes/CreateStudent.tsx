@@ -29,41 +29,36 @@ const CreateStudent: React.FC = () => {
     setErrorMsg('');
 
     try {
-      // 1. Validar se as rotas são JSON válidos
       const parsedMainRoute = JSON.parse(formData.mainRoute);
       const parsedAltRoute = JSON.parse(formData.altRoute);
 
-      // 2. Criar utilizador na Autenticação do Supabase (auth.users)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      });
+      // Inserção direta na tabela (sem usar auth.signUp)
+      const { data, error } = await supabase
+        .from('students')
+        .insert([
+          {
+            email: formData.email,
+            password: formData.password, // Gravado diretamente
+            name: formData.name,
+            phone_responsible: formData.phone,
+            score: 100,
+            main_route: parsedMainRoute,
+            alt_route: parsedAltRoute
+          }
+        ])
+        .select()
+        .single(); // Retorna o utilizador criado
 
-      if (authError) throw new Error(authError.message);
+      if (error) throw new Error(error.message);
 
-      // 3. Inserir o perfil do estudante na tabela 'students'
-      if (authData.user) {
-        const { error: dbError } = await supabase
-          .from('students')
-          .insert([
-            {
-              id: authData.user.id,
-              email: formData.email,
-              name: formData.name,
-              phone_responsible: formData.phone,
-              score: 100, // Pontuação inicial
-              main_route: parsedMainRoute,
-              alt_route: parsedAltRoute
-            }
-          ]);
-
-        if (dbError) throw new Error(dbError.message);
-
-        // Sucesso! Redireciona para o mapa ou para o ecrã de seleção
-        navigate('/monitoramento');
+      // Salva o utilizador no navegador para saber quem está logado
+      if (data) {
+        localStorage.setItem('estudante_logado', JSON.stringify(data));
+        navigate('/detalhes-rota');
       }
+
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao criar a conta. Verifique os dados JSON das rotas.');
+      setErrorMsg(err.message || 'Erro ao criar a conta.');
     } finally {
       setLoading(false);
     }
@@ -77,14 +72,13 @@ const CreateStudent: React.FC = () => {
           <div className="shield-icon-wrapper">
             <ShieldCheck size={48} color="#fff" />
           </div>
-          <h1>Criar Conta Segura</h1>
+          <h1>Criar Conta</h1>
           <p>Configure o perfil do estudante e as rotas</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {errorMsg && <div className="error-message">{errorMsg}</div>}
 
-          {/* Dados Pessoais */}
           <div className="input-group">
             <User size={20} className="input-icon" />
             <input type="text" name="name" placeholder="Nome do Estudante" required value={formData.name} onChange={handleChange} />
@@ -97,7 +91,7 @@ const CreateStudent: React.FC = () => {
 
           <div className="input-group">
             <Lock size={20} className="input-icon" />
-            <input type="password" name="password" placeholder="Palavra-passe (Mínimo 6 caracteres)" required minLength={6} value={formData.password} onChange={handleChange} />
+            <input type="password" name="password" placeholder="Palavra-passe" required minLength={6} value={formData.password} onChange={handleChange} />
           </div>
 
           <div className="input-group">
@@ -108,21 +102,18 @@ const CreateStudent: React.FC = () => {
           <hr className="divider" />
           <h3 className="section-subtitle">Configuração de Rotas</h3>
 
-          {/* Rota Principal */}
           <div className="textarea-group">
             <label><Map size={16} /> Coordenadas Rota Principal</label>
             <textarea name="mainRoute" rows={4} required value={formData.mainRoute} onChange={handleChange}></textarea>
-            <span className="help-text">Formato: [[lat, lng], [lat, lng]]</span>
           </div>
 
-          {/* Rota Alternativa */}
           <div className="textarea-group">
             <label><Map size={16} /> Coordenadas Rota Alternativa</label>
             <textarea name="altRoute" rows={4} value={formData.altRoute} onChange={handleChange}></textarea>
           </div>
 
           <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? 'A CRIAR CONTA...' : 'FINALIZAR REGISTO'}
+            {loading ? 'A CRIAR...' : 'FINALIZAR REGISTO'}
             {!loading && <ArrowRight size={20} />}
           </button>
         </form>

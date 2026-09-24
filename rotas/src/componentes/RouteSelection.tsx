@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Home, Trophy, Star, User, 
-  CheckCircle2, Bike, Circle, Dot
+  CheckCircle2, Circle, Dot
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Ícones personalizados para Origem e Destino
+// Ícones personalizados
 const startIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -33,70 +33,51 @@ const endIcon = new L.Icon({
 });
 
 const RouteSelection: React.FC = () => {
-  // ✅ CORREÇÃO: O hook useNavigate AGORA ESTÁ AQUI DENTRO!
   const navigate = useNavigate();
 
-  const [selectedRoute, setSelectedRoute] = useState<string>('A');
-  const [pathA, setPathA] = useState<[number, number][]>([]);
-  const [pathB, setPathB] = useState<[number, number][]>([]);
-  const [pathC, setPathC] = useState<[number, number][]>([]);
-
-  // Ponto de Saída e Chegada fixos em General Carneiro - PR
-  const startPoint: [number, number] = [-26.4286, -51.3140]; // Casa (Saída)
-  const endPoint: [number, number] = [-26.4221, -51.3195];   // Escola (Chegada)
-
-  // Waypoints intermediários para forçar o OSRM a traçar rotas diferentes (Alternativas)
-  const waypointB: [number, number] = [-26.4250, -51.3110];
-  const waypointC: [number, number] = [-26.4290, -51.3200];
+  // Estados para as rotas e utilizador
+  const [selectedRoute, setSelectedRoute] = useState<'A' | 'B'>('A');
+  const [mainRoute, setMainRoute] = useState<[number, number][]>([]);
+  const [altRoute, setAltRoute] = useState<[number, number][]>([]);
+  const [studentName, setStudentName] = useState('');
 
   useEffect(() => {
-    // Função para buscar rota real no OSRM
-    const fetchRealRoute = async (
-      start: [number, number], 
-      end: [number, number], 
-      profile: string,
-      waypoint?: [number, number]
-    ) => {
-      try {
-        // OSRM usa o formato [Longitude, Latitude]
-        let coords = `${start[1]},${start[0]}`;
-        if (waypoint) coords += `;${waypoint[1]},${waypoint[0]}`;
-        coords += `;${end[1]},${end[0]}`;
+    // 1. Busca os dados do utilizador salvo no Login
+    const estudanteString = localStorage.getItem('estudante_logado');
+    
+    if (estudanteString) {
+      const estudante = JSON.parse(estudanteString);
+      setStudentName(estudante.name);
+      
+      // Carrega as rotas cadastradas
+      if (estudante.main_route) setMainRoute(estudante.main_route);
+      if (estudante.alt_route) setAltRoute(estudante.alt_route);
+    } else {
+      // Se não houver ninguém logado, volta para o login
+      navigate('/login');
+    }
+  }, [navigate]);
 
-        const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?geometries=geojson&overview=full`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.routes && data.routes.length > 0) {
-          // Converte de [Lon, Lat] (GeoJSON) para [Lat, Lon] (Leaflet)
-          return data.routes[0].geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar rota:", error);
+  // Define os marcadores dinamicamente com base na rota principal (se existir)
+  const startPoint: [number, number] = mainRoute.length > 0 ? mainRoute[0] : [-26.4204, -51.3185];
+  const endPoint: [number, number] = mainRoute.length > 0 ? mainRoute[mainRoute.length - 1] : [-26.4288, -51.3163];
+
+  // 2. Função que envia a rota escolhida para a tela de Detalhes
+  const handleConfirmRoute = () => {
+    const routeData = selectedRoute === 'A' ? mainRoute : altRoute;
+    const routeType = selectedRoute === 'A' ? 'Principal' : 'Alternativa';
+
+    navigate('/detalhes-rota', {
+      state: {
+        tipoRota: routeType,
+        coordenadas: routeData
       }
-      return [];
-    };
-
-    const loadAllRoutes = async () => {
-      // Rota A: Direta a pé
-      const routeA = await fetchRealRoute(startPoint, endPoint, 'foot');
-      // Rota B: Caminho alternativo passando por um waypoint
-      const routeB = await fetchRealRoute(startPoint, endPoint, 'foot', waypointB);
-      // Rota C: Ciclovia/Bicicleta passando por outro waypoint
-      const routeC = await fetchRealRoute(startPoint, endPoint, 'bike', waypointC);
-
-      setPathA(routeA);
-      setPathB(routeB);
-      setPathC(routeC);
-    };
-
-    loadAllRoutes();
-  }, []);
+    });
+  };
 
   return (
     <div className="layout-wrapper">
       
-      {/* Menu Lateral Desktop / Rodapé Mobile */}
       <nav className="navigation-bar">
         <div className="nav-item">
           <Home size={24} />
@@ -120,131 +101,114 @@ const RouteSelection: React.FC = () => {
         </div>
       </nav>
 
-      {/* Painel de Seleção de Rotas */}
       <aside className="sidebar-content">
         <header className="header">
-          <button className="back-btn">
+          <button className="back-btn" onClick={() => navigate(-1)}>
             <ArrowLeft size={24} color="#123762" />
           </button>
           <div className="header-title">
-            <span className="title-light">Escolha uma</span>
-            <span className="title-bold">Rota Segura</span>
+            <span className="title-light">Olá, {studentName}</span>
+            <span className="title-bold">Escolha sua Rota</span>
           </div>
         </header>
 
         <div className="routes-list">
-          <div 
-            className={`route-item ${selectedRoute === 'A' ? 'selected' : ''}`}
-            onClick={() => setSelectedRoute('A')}
-          >
-            <div className="route-icon-container blue">
-              <CheckCircle2 size={24} fill="#00bcd4" color="#fff" />
+          {/* Rota Principal */}
+          {mainRoute.length > 0 && (
+            <div 
+              className={`route-item ${selectedRoute === 'A' ? 'selected' : ''}`}
+              onClick={() => setSelectedRoute('A')}
+            >
+              <div className="route-icon-container blue">
+                <CheckCircle2 size={24} fill="#00bcd4" color="#fff" />
+              </div>
+              <div className="route-info">
+                <h4>Rota Principal</h4>
+                <span className="badge-recommended">Caminho Habitual</span>
+              </div>
+              <div className="radio-btn">
+                {selectedRoute === 'A' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
+              </div>
             </div>
-            <div className="route-info">
-              <h4>Rota A - Mais Segura</h4>
-              <p>1,2 km - 15 min</p>
-              <span className="badge-recommended">Recomendada pela escola</span>
-            </div>
-            <div className="radio-btn">
-              {selectedRoute === 'A' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
-            </div>
-          </div>
+          )}
 
-          <div 
-            className={`route-item ${selectedRoute === 'B' ? 'selected' : ''}`}
-            onClick={() => setSelectedRoute('B')}
-          >
-            <div className="route-icon-container yellow">
-              <CheckCircle2 size={24} fill="#fbc02d" color="#fff" />
+          {/* Rota Alternativa */}
+          {altRoute.length > 0 && (
+            <div 
+              className={`route-item ${selectedRoute === 'B' ? 'selected' : ''}`}
+              onClick={() => setSelectedRoute('B')}
+            >
+              <div className="route-icon-container yellow">
+                <CheckCircle2 size={24} fill="#fbc02d" color="#fff" />
+              </div>
+              <div className="route-info">
+                <h4>Rota Alternativa</h4>
+                <p>Opção Secundária</p>
+              </div>
+              <div className="radio-btn">
+                {selectedRoute === 'B' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
+              </div>
             </div>
-            <div className="route-info">
-              <h4>Rota B - Alternativa</h4>
-              <p>1,5 km - 19 min</p>
-            </div>
-            <div className="radio-btn">
-              {selectedRoute === 'B' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
-            </div>
-          </div>
-
-          <div 
-            className={`route-item ${selectedRoute === 'C' ? 'selected' : ''}`}
-            onClick={() => setSelectedRoute('C')}
-          >
-            <div className="route-icon-container green">
-              <Bike size={24} color="#4caf50" />
-            </div>
-            <div className="route-info">
-              <h4>Rota C - Ciclovia</h4>
-              <p>1,8 km - 8 min</p>
-            </div>
-            <div className="radio-btn">
-              {selectedRoute === 'C' ? <Dot size={48} color="#123762" /> : <Circle size={24} color="#a0aab5" />}
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="action-container">
-          <button className="btn-select-route" onClick={() => navigate('/detalhes-rota')}>
+          <button 
+            className="btn-select-route" 
+            onClick={handleConfirmRoute}
+            disabled={mainRoute.length === 0}
+          >
             SELECIONAR ROTA
           </button>
         </div>
       </aside>
 
-      {/* Mapa Central */}
       <main className="map-area">
         <MapContainer 
-          center={[-26.4250, -51.3160]} 
+          center={startPoint} 
           zoom={15} 
           scrollWheelZoom={true} 
           className="leaflet-map"
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution='&copy; OpenStreetMap'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* As rotas desenhadas com classes CSS para animação */}
-          {pathA.length > 0 && (
+          {mainRoute.length > 0 && (
             <Polyline 
-              positions={pathA} 
+              positions={mainRoute} 
               pathOptions={{
                 color: "#00bcd4",
                 weight: selectedRoute === 'A' ? 8 : 4,
-                opacity: selectedRoute === 'A' ? 1 : 0.2,
+                opacity: selectedRoute === 'A' ? 1 : 0.3,
                 className: selectedRoute === 'A' ? 'route-path-active' : 'route-path-inactive'
               }} 
             />
           )}
-          {pathB.length > 0 && (
+
+          {altRoute.length > 0 && (
             <Polyline 
-              positions={pathB} 
+              positions={altRoute} 
               pathOptions={{
                 color: "#fbc02d",
                 weight: selectedRoute === 'B' ? 8 : 4,
-                opacity: selectedRoute === 'B' ? 1 : 0.2,
+                opacity: selectedRoute === 'B' ? 1 : 0.3,
                 className: selectedRoute === 'B' ? 'route-path-active' : 'route-path-inactive'
               }} 
             />
           )}
-          {pathC.length > 0 && (
-            <Polyline 
-              positions={pathC} 
-              pathOptions={{
-                color: "#4caf50",
-                weight: selectedRoute === 'C' ? 8 : 4,
-                opacity: selectedRoute === 'C' ? 1 : 0.2,
-                className: selectedRoute === 'C' ? 'route-path-active' : 'route-path-inactive'
-              }} 
-            />
-          )}
           
-          {/* Marcadores de Saída e Chegada */}
-          <Marker position={startPoint} icon={startIcon}>
-            <Popup>Sua Casa (Saída)</Popup>
-          </Marker>
-          <Marker position={endPoint} icon={endIcon}>
-            <Popup>Escola Municipal (Chegada)</Popup>
-          </Marker>
+          {mainRoute.length > 0 && (
+            <>
+              <Marker position={startPoint} icon={startIcon}>
+                <Popup>Início da Rota</Popup>
+              </Marker>
+              <Marker position={endPoint} icon={endIcon}>
+                <Popup>Destino Final</Popup>
+              </Marker>
+            </>
+          )}
 
         </MapContainer>
       </main>
