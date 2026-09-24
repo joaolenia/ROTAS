@@ -1,0 +1,265 @@
+:root {
+  --primary-blue: #123762;
+  --primary-blue-light: #1a4f8b;
+  --bg-app: #f4f6f8;
+  --bg-white: #ffffff;
+  --text-main: #1f2937;
+  --text-gray: #6b7280;
+  --border-color: #e5e7eb;
+  --green-main: #1b8e44;
+  --red-main: #e63946;
+  --input-bg: #f9fafb;
+}
+
+/* -------------------------------------
+   LAYOUT BASE (Fundo)
+------------------------------------- */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #e3e4e6;
+  background-image: radial-gradient(circle at top right, #e3e4e6, #cbd5e1);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 1rem;
+}
+
+/* -------------------------------------
+   MOBILE FIRST (Telemóvel)
+------------------------------------- */
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  background-color: var(--bg-white);
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  overflow-y: auto;
+  max-height: 95vh; /* Permite scroll no telemóvel se o ecrã for pequeno */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.auth-header {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.shield-icon-wrapper {
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 1.2rem;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+.auth-header h1 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+}
+
+.auth-header p {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.auth-form {
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  color: var(--red-main);
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid #fecaca;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  background-color: var(--input-bg);
+  border-radius: 12px;
+  padding: 0 1rem;
+  border: 1.5px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.input-group:focus-within {
+  border-color: var(--primary-blue);
+  background-color: var(--bg-white);
+}
+
+.input-icon {
+  color: var(--text-gray);
+  margin-right: 0.8rem;
+}
+
+.input-group input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 1rem 0;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  outline: none;
+}
+
+.divider {
+  border: 0;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+.section-subtitle {
+  font-size: 1.05rem;
+  color: var(--primary-blue);
+  font-weight: 800;
+  margin: 0;
+}
+
+.textarea-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.textarea-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+.textarea-group textarea {
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--text-main);
+  resize: vertical;
+  outline: none;
+  min-height: 80px;
+}
+
+.textarea-group textarea:focus {
+  border-color: var(--primary-blue);
+  background-color: var(--bg-white);
+}
+
+.btn-submit {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1.2rem;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-submit:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  text-align: center;
+  padding: 0 1.5rem 2rem;
+}
+
+.auth-footer p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-gray);
+}
+
+.auth-footer span {
+  color: var(--primary-blue);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* -------------------------------------
+   DESKTOP OPTIMIZED (Ecrã Dividido Perfeito)
+------------------------------------- */
+@media (min-width: 900px) {
+  .auth-card {
+    max-width: 950px;
+    height: 85vh; /* Altura fixa baseada no ecrã para não cortar */
+    max-height: 700px;
+    
+    /* O Segredo: CSS Grid para criar o ecrã dividido */
+    display: grid;
+    grid-template-columns: 35% 65%;
+    grid-template-rows: 1fr auto; 
+    overflow: hidden; /* O scroll agora ficará apenas dentro do formulário */
+  }
+
+  /* Lado Esquerdo */
+  .auth-header {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3; /* Estica o painel azul até abaixo */
+    justify-content: center;
+  }
+
+  /* Lado Direito (Formulário no topo) */
+  .auth-form {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    padding: 2.5rem 3rem 1rem 3rem;
+    
+    /* Grelha Interna do Formulário */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    align-content: start;
+    
+    /* Permite scroll apenas na parte branca se o ecrã for pequeno */
+    overflow-y: auto; 
+  }
+
+  /* Faz com que estes elementos ocupem toda a largura na direita */
+  .error-message,
+  .divider,
+  .section-subtitle,
+  .btn-submit {
+    grid-column: 1 / -1;
+  }
+
+  /* As textareas ficam lado a lado */
+  .textarea-group {
+    grid-column: span 1;
+  }
+
+  /* Lado Direito (Rodapé em baixo) */
+  .auth-footer {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    padding: 1rem 3rem 2rem 3rem;
+    text-align: left;
+    background-color: var(--bg-white);
+  }
+}
