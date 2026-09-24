@@ -54,7 +54,7 @@ const CreateStudent: React.FC = () => {
       // Salva o utilizador no navegador para saber quem está logado
       if (data) {
         localStorage.setItem('estudante_logado', JSON.stringify(data));
-        navigate('/detalhes-rota');
+        navigate('/criar-estudante');
       }
 
     } catch (err: any) {
