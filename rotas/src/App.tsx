@@ -5,6 +5,8 @@ import RouteDetails from './componentes/RouteDetails';
 import RouteMonitor from './componentes/RouteMonitor';
 import CreateStudent from './componentes/CreateStudent';
 import Login from './componentes/Login';
+import Home from './componentes/Home';
+
 
 const App: React.FC = () => {
   return (
@@ -12,6 +14,7 @@ const App: React.FC = () => {
     <BrowserRouter> 
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/home" element={<Home/>} />
         <Route path="/selecionar-rota" element={<RouteSelection />} />
         <Route path="/detalhes-rota" element={<RouteDetails />} />
         <Route path="/monitoramento" element={<RouteMonitor />} />

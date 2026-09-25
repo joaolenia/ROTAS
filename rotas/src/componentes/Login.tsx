@@ -32,7 +32,7 @@ const Login: React.FC = () => {
 
       // Sucesso: Guarda o perfil no localStorage para uso em /detalhes-rota
       localStorage.setItem('estudante_logado', JSON.stringify(data));
-      navigate('/selecionar-rota');
+      navigate('/home');
       
     } catch (err: any) {
       setErrorMsg(err.message);
